@@ -2,15 +2,15 @@ version: '3.8'
 
 services:
   postgres_db:
-    image: postgres:15 # Use a specific, stable version of Postgres
+    image: postgres:${POSTGRES_VERSION} # Use a specific, stable version of Postgres
     container_name: db
     restart: always
     environment:
-      POSTGRES_USER: backend_user
-      POSTGRES_PASSWORD: pass
-      POSTGRES_DB: student_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432" # Maps host port 5432 to container port 5432
+      - "${POSTGRES_PORT}:5432" # Maps host port 5432 to container port 5432
     volumes:
       - postgres_data:/var/lib/postgresql/data # Persist data in a named volume
 
