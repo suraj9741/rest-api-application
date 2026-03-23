@@ -7,3 +7,6 @@ engine = create_engine(settings.DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(bind=engine)
 
 Base = declarative_base()
+
+def get_db():
+    return SessionLocal()

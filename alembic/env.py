@@ -35,6 +35,12 @@ if config.config_file_name is not None:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+def process_revision_directives(context, revision, directives):
+    if directives:
+        script = directives[0]
+        if script.upgrade_ops.is_empty():
+            directives[:] = []
+            print("⚠️ No schema changes detected. Migration not created.")
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -75,7 +81,7 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection, target_metadata=target_metadata, process_revision_directives=process_revision_directives
         )
 
         with context.begin_transaction():

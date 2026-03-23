@@ -9,3 +9,8 @@
 
 source /Users/one2n/py_env/student/bin/activate
 
+## run application
+python run.py 
+
+## run test cases
+PYTHONPATH=. pytest
