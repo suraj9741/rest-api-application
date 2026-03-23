@@ -3,7 +3,7 @@ VENV_PATH=/Users/one2n/py_env/student
 PYTHON=python3
 PIP=$(VENV_PATH)/bin/pip
 PYTHON_BIN=$(VENV_PATH)/bin/python
-
+FLASK_APP=manage:create_app
 COMPOSE_FILE=postgres.yaml
 SERVICE_NAME=postgres_db
 
@@ -40,9 +40,6 @@ run: install check-db
 	@echo "🚀 Starting application..."
 	@$(PYTHON_BIN) run.py
 
-# ===== ALL-IN-ONE =====
-all: test run
-
 # ===== STOP DB =====
 stop-db:
 	@echo "🛑 Stopping Postgres..."
@@ -72,3 +69,17 @@ stop-all:
 	@find . -type f -name "*.pyc" -delete || true
 
 	@echo "✅ All resources stopped"
+
+# ==== DB MIGRATION =====
+migrate:
+	@echo "📦 Generating migration..."
+	FLASK_APP=$(FLASK_APP) flask db migrate -m "auto migration"
+
+# ==== DB UPGRADE =====
+upgrade:
+	@echo "🚀 Applying migration..."
+	FLASK_APP=$(FLASK_APP) flask db upgrade
+
+# ===== ALL-IN-ONE =====
+all: install check-db upgrade test run
+	@echo "🎉 All tasks completed!"

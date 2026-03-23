@@ -1,15 +1,14 @@
-from sqlalchemy import Column, Integer, String, Date
-from app.db import Base
+from app.db import db
 
-class Student(Base):
-    __tablename__ = "student"   # 👈 table name changed
+class Student(db.Model):
+    __tablename__ = "student"
 
-    student_id = Column(Integer, primary_key=True, index=True)
-    first_name = Column(String(50), nullable=False)
-    last_name = Column(String(50))
-    email = Column(String(100), unique=True)
-    date_of_birth = Column(Date)
-    gender = Column(String(5))
+    student_id = db.Column(db.Integer, primary_key=True, index=True)
+    first_name = db.Column(db.String(50), nullable=False)
+    last_name = db.Column(db.String(50))
+    email = db.Column(db.String(100), unique=True)
+    date_of_birth = db.Column(db.Date)
+    gender = db.Column(db.String(5))
 
     def to_dict(self):
         return {
