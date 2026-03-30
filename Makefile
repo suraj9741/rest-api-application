@@ -1,5 +1,5 @@
 # ===== CONFIG =====
-VENV_PATH=/Users/one2n/py_env/student
+VENV_PATH=~/py_env/student
 PYTHON=python3
 PIP=$(VENV_PATH)/bin/pip
 PYTHON_BIN=$(VENV_PATH)/bin/python
@@ -20,9 +20,28 @@ check-db:
 # ===== SETUP VENV =====
 venv:
 	@echo "🐍 Setting up virtual environment..."
-	@if [ ! -d "$(VENV_PATH)" ]; then \
-		$(PYTHON) -m venv $(VENV_PATH); \
+
+	# Expand ~ properly
+	@VENV_DIR=$(VENV_PATH); \
+	VENV_DIR=$${VENV_DIR/#\~/$$HOME}; \
+	\
+	if [ ! -d "$$VENV_DIR" ]; then \
+		echo "📁 Creating directory $$VENV_DIR"; \
+		mkdir -p $$VENV_DIR; \
+	fi; \
+	\
+	if [ ! -d "$$VENV_DIR/bin" ]; then \
+		echo "⚙️ Creating virtual environment..."; \
+		$(PYTHON) -m venv $$VENV_DIR; \
+	else \
+		echo "Virtual environment already exists"; \
 	fi
+
+# ===== ACTIVATE VENV =====
+activate:
+	@VENV_DIR=$(VENV_PATH); \
+	VENV_DIR=$${VENV_DIR/#\~/$$HOME}; \
+	source $$VENV_DIR/bin/activate && echo "Activated"
 
 # ===== INSTALL DEPENDENCIES =====
 install: venv
@@ -73,13 +92,13 @@ stop-all:
 # ==== DB MIGRATION =====
 migrate:
 	@echo "📦 Generating migration..."
-	FLASK_APP=$(FLASK_APP) flask db migrate -m "auto migration"
+	@$(PYTHON_BIN) -m flask db migrate -m "auto migration"
 
 # ==== DB UPGRADE =====
 upgrade:
 	@echo "🚀 Applying migration..."
-	FLASK_APP=$(FLASK_APP) flask db upgrade
+	@$(PYTHON_BIN) -m flask db upgrade
 
 # ===== ALL-IN-ONE =====
-all: install check-db upgrade test run
+all: venv activate install check-db upgrade test run
 	@echo "🎉 All tasks completed!"
