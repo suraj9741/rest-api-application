@@ -4,18 +4,31 @@ PYTHON=python3
 PIP=$(VENV_PATH)/bin/pip
 PYTHON_BIN=$(VENV_PATH)/bin/python
 FLASK_APP=manage:create_app
-COMPOSE_FILE=postgres.yaml
 SERVICE_NAME=postgres_db
 
-# ===== CHECK DOCKER CONTAINER =====
-check-db:
+# ===== CHECK/START DB DOCKER CONTAINER =====
+start-db:
 	@echo "🔍 Checking Postgres container..."
 	@if [ "$$(docker ps -q -f name=db)" ]; then \
-		echo "✅ Postgres is already running"; \
+		echo "Postgres is already running"; \
 	else \
-		echo "🚀 Starting Postgres container..."; \
-		docker compose -f $(COMPOSE_FILE) up -d; \
+		echo "Starting Postgres container..."; \
+		docker compose up -d postgres_db; \
 	fi
+
+# ==== DB MIGRATION =====
+migrate: start-db
+	@echo "Generating migration..."
+	@$(PYTHON_BIN) -m flask db migrate -m "auto migration"
+
+build: migrate
+	@echo "Building application docker container"
+	@docker build -t my-app .
+
+# ==== DB UPGRADE =====
+upgrade:
+	@echo "Applying migration..."
+	@$(PYTHON_BIN) -m flask db upgrade
 
 # ===== SETUP VENV =====
 venv:
@@ -51,54 +64,46 @@ install: venv
 
 # ===== RUN TESTS =====
 test: install check-db
-	@echo "🧪 Running tests..."
+	@echo "Running tests..."
 	@PYTHONPATH=. $(PYTHON_BIN) -m pytest -v
 
 # ===== RUN APP =====
 run: install check-db
-	@echo "🚀 Starting application..."
-	@$(PYTHON_BIN) run.py
+	@echo "Starting application..."
+	@$(PYTHON_BIN) app.py
 
 # ===== STOP DB =====
 stop-db:
-	@echo "🛑 Stopping Postgres..."
+	@echo "Stopping Postgres..."
 	@docker compose -f $(COMPOSE_FILE) down
 
 # ===== CLEAN =====
 clean:
-	@echo "🧹 Cleaning cache..."
+	@echo "Cleaning cache..."
 	@find . -type d -name "__pycache__" -exec rm -r {} +
 	@find . -type f -name "*.pyc" -delete
 
 # ===== STOP APP =====
 stop-app:
-	@echo "🛑 Stopping application..."
+	@echo "Stopping application..."
 	@pkill -f "run.py" || echo "⚠️ App not running"
 
 # ===== STOP ALL =====
 stop-all:
-	@echo "🛑 Stopping application..."
+	@echo "Stopping application..."
 	@pkill -f "run.py" || echo "⚠️ App not running"
 
-	@echo "🛑 Stopping Postgres..."
+	@echo "Stopping Postgres..."
 	@docker compose -f $(COMPOSE_FILE) down
 
-	@echo "🧹 Cleaning temp files..."
+	@echo "Cleaning temp files..."
 	@find . -type d -name "__pycache__" -exec rm -r {} + || true
 	@find . -type f -name "*.pyc" -delete || true
 
-	@echo "✅ All resources stopped"
+	@echo "All resources stopped"
 
-# ==== DB MIGRATION =====
-migrate:
-	@echo "📦 Generating migration..."
-	@$(PYTHON_BIN) -m flask db migrate -m "auto migration"
 
-# ==== DB UPGRADE =====
-upgrade:
-	@echo "🚀 Applying migration..."
-	@$(PYTHON_BIN) -m flask db upgrade
 
 # ===== ALL-IN-ONE =====
 all: venv activate install check-db upgrade test run
-	@echo "🎉 All tasks completed!"
+	@echo "All tasks completed!"
