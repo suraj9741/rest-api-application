@@ -1,0 +1,69 @@
+services:
+  postgres_db:
+    image: postgres:${POSTGRES_VERSION} # Use a specific, stable version of Postgres
+    container_name: db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432" # Maps host port 5432 to container port 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Persist data in a named volume
+    # healthcheck (IMPORTANT)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      retries: 5
+      timeout: 3s
+
+  upgrade:
+    image: ${DOCKER_USERNAME}/${APPLICATION_IMAGE}:${APPLICATION_IMAGE_TAG}
+    container_name: upgrade
+    depends_on:
+      postgres_db:
+        condition: service_healthy # wait for DB health
+    environment:
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    command: ["python", "-m", "flask", "db", "upgrade"]
+    restart: "no"
+
+  test:
+    image: ${DOCKER_USERNAME}/${APPLICATION_IMAGE}:${APPLICATION_IMAGE_TAG}
+    profiles:
+      - test
+    container_name: run_testcase
+    depends_on:
+      - upgrade
+    environment:
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    command: ["python", "-m", "pytest", "-v"]
+    restart: "no"
+
+  app:
+    image: ${DOCKER_USERNAME}/${APPLICATION_IMAGE}:${APPLICATION_IMAGE_TAG}
+    container_name: my_app
+    restart: always
+    depends_on:
+      - upgrade
+    ports:
+      - "${APPLICATION_PORT}:5001"
+    environment:
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    command: [ "python", "app.py" ]
+
+volumes:
+  postgres_data:

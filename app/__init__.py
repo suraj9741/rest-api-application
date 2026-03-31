@@ -13,14 +13,11 @@ def create_app(test_config=None):
 
     logging.basicConfig(level=logging.INFO)
 
-    # ✅ Apply test config FIRST
     if test_config:
         app.config.update(test_config)
 
-    # ✅ init DB (will NOT override test config now)
     init_db(app)
 
-    # ✅ init migration
     migrate.init_app(app, db)
 
     # register blueprint
